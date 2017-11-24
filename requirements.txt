@@ -1,0 +1,11 @@
+mongoengine
+cfscrape
+profig
+bs4
+requests
+logzero
+colorama
+click
+jieba
+tqdm
+lxml

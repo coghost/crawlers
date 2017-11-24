@@ -1,3 +1,10 @@
+.idea/
+spiderenv/
+.norsync
+*/*.json
+*/*.cnf
+cais/data
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
