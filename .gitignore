@@ -1,8 +1,9 @@
 .idea/
-spiderenv/
+.venv/
 .norsync
 */*.json
 */*.cnf
+*/*.png
 cais/data
 
 # Byte-compiled / optimized / DLL files

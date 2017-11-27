@@ -56,12 +56,12 @@ class Crawl(object):
             self.headers['Referer'] = refer
         self.encoding = encoding
 
-    def bs4post(self, url, payload, to=5, retry=0):
-        res = self.do_post(url, payload, to, retry)
+    def bs4post(self, url, payload, to=5, retry=0, headers=None, use_json=False):
+        res = self.do_post(url, payload, to, retry, use_json=use_json, headers=headers)
         if res:
             return BS(res, self.parser, from_encoding=self.encoding)
 
-    def bs4get(self, url, to=5, retry=0, parser=''):
+    def bs4get(self, url, to=5, retry=0, parser='', headers=None):
         """
             返回经 ``bs4`` 格式化后的文档
 
@@ -76,13 +76,13 @@ class Crawl(object):
         :return:
         :rtype:
         """
-        res = self.crawl(url, to, retry)
+        res = self.crawl(url, to, retry, headers=headers)
         if not parser:
             parser = self.parser
         if res:
             return BS(res, parser, from_encoding=self.encoding)
 
-    def do_post(self, url, payload, to=5, retry=0, use_json=False):
+    def do_post(self, url, payload, to=5, retry=0, use_json=False, headers=None):
         """
         使用 ``request.get`` 从指定 url 获取数据
 
@@ -101,7 +101,7 @@ class Crawl(object):
             'url': url,
             'data': payload,
             'timeout': to,
-            'headers': self.post_headers,
+            'headers': headers if headers else self.post_headers,
         }
         if use_json:
             para.pop('data')
@@ -111,13 +111,14 @@ class Crawl(object):
         if rs.status_code == 200:
             return rs.content
 
-    def crawl(self, url, to=5, retry=0):
+    def crawl(self, url, to=5, retry=0, headers=None):
         i = 0
+        head = headers if headers else self.headers
         content = None
         while i <= retry:
             i += 1
             try:
-                res = requests.get(url, headers=self.headers, timeout=to)
+                res = requests.get(url, headers=head, timeout=to)
                 if res:
                     content = res.content
             except (requests.ReadTimeout, requests.ConnectTimeout, requests.ConnectionError) as _:

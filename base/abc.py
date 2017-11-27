@@ -23,6 +23,9 @@ if sys.version_info[0] < 3:
     sys.setdefaultencoding('utf-8')
 
 import profig
+import click
+from clint import textui
+
 import logzero
 from logzero import logger as log
 
@@ -112,7 +115,8 @@ if cfg.get('log.enabled', False):
     )
 
 # bagua = '☼✔❄✖✄'
-bagua = '☰☷☳☴☵☲☶☱'  # 乾(天), 坤(地), 震(雷), 巽(xun, 风), 坎(水), 离(火), 艮(山), 兑(泽)
+# bagua = '☰☷☳☴☵☲☶☱'  # 乾(天), 坤(地), 震(雷), 巽(xun, 风), 坎(水), 离(火), 艮(山), 兑(泽)
+bagua = '🍺🍻❗😈☠'
 formatter = LFormatter(bagua)
 logzero.formatter(formatter)
 
@@ -306,6 +310,57 @@ def add_jpg(pathin):
                     continue
 
             os.rename(_fpth, '{}.jpg'.format(_fpth))
+
+
+def num_choice(choices):
+    """
+    传入数组, 返回正确的 index
+    :param choices:
+    :type choices:
+    :return:
+    :rtype:
+    """
+    if not choices:
+        return None
+
+    with textui.indent(4, quote=' >'):
+        for i, choice in enumerate(choices, start=1):
+            textui.puts(textui.colored.green('{}. [{}]'.format(i, choice)))
+            # print('{}: {}'.format(i, choice))
+
+    if len(choices) == 1:
+        return 0
+
+    _valid = [str(x + 1) for x in range(0, len(choices))]
+    # click.echo('Your Choice(q to quit)? [{}] '.format(','.join(_valid)))
+    c = click.prompt('Your Choice(q to quit)?')
+    # print(c)
+
+    if c in 'qQ':
+        os._exit(-1)
+    elif c not in _valid:
+        log.error('Invalid input :( [{}]'.format(c))
+        return num_choice(choices)
+    else:
+        return int(c) - 1
+
+
+def yn_choice(msg):
+    """
+    传入 msg , 返回 True/False
+    :param msg:
+    :type msg:
+    :return:
+    :rtype:
+    """
+    click.secho('{}? [yn]'.format(msg), nl=False, fg='green')
+    c = click.getchar()
+    click.echo()
+    if c in 'yYnN':
+        return 'yYnN'.index(c) < 2
+    else:
+        click.secho('only yYnN allowed :( [{}]'.format(c), fg='red')
+        return yn_choice(msg)
 
 
 if __name__ == '__main__':

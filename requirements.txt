@@ -6,6 +6,8 @@ requests
 logzero
 colorama
 click
+clint
 jieba
 tqdm
 lxml
+selenium
