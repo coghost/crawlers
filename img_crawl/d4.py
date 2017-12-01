@@ -198,7 +198,7 @@ class D4(Crawl):
         all_pages = [
             _url + '-{}'.format(x + 1)
             for x in range(total_num)
-            ]
+        ]
 
         for page_ in tqdm(all_pages, ascii=True, leave=False):
             pages += self.fetch_page_links(page_)
@@ -307,7 +307,7 @@ class D4(Crawl):
                     item.a.img.get('data-original').split('.')[-1]),
             }
             for item in itembls
-            ]
+        ]
 
         _fail_count = 0
         for para in tqdm(params, ascii=True, desc='%8s ✈ %10s' % (page_index, fd)):
@@ -328,14 +328,7 @@ class D4(Crawl):
                 log.warn('fail@5 img of this, skip({}) => ({})'.format(page_index, fd))
                 break
 
-    def scp_from_53(self, tag):
-        fd_u = self.gen_fd_by_tag(tag['src'])
-        _abs_url = 'scp -r tinyc@172.18.14.53:/home/tinyc/pylfp/datas/d4/{} {}'.format(fd_u, self.base_dir)
-        print(_abs_url)
-        _, rs = abc.get_sys_cmd_output(_abs_url)
-        if not _:
-            return
-        log.debug('cannot got from tc53, try from net.')
+    def download_by_name(self, tag):
         self.download_by_tag(tag['src'])
 
 
@@ -427,7 +420,7 @@ def run(tag_group, page_idx, tag_idx,
         dir_pre = name
         for t in tags:
             if t.get('name') == name:
-                d4.scp_from_53(t)
+                d4.download_by_name(t)
                 break
         # log.error('no data by name({})'.format(name))
         return

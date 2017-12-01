@@ -29,7 +29,6 @@ import click
 import json
 from multiprocessing import Pool
 
-
 from base.crawl import Crawl
 from base import abc
 from base.abc import cfg
@@ -72,7 +71,7 @@ class Pjw(Crawl):
         page_all_sub_urls = [
             '{}_{}.html'.format(page_url.replace('.html', ''), i + 2)
             for i in range(page_total)
-            ]
+        ]
         # print(page_all_sub_urls)
         if run_alone:
             pool = Pool(processes=8)
@@ -162,7 +161,7 @@ class Pjw(Crawl):
                 'title': '{}'.format(img_url.split('/')[-1])
             }
             for img_url in page_info['img_urls']
-            ]
+        ]
 
         _fail_count = 0
         for para in tqdm(params, ascii=True, desc='TEST'):
@@ -202,10 +201,15 @@ class Pjw(Crawl):
         return self.store.get(name)
 
     def search_online(self, name):
-        raw = self.bs4post(M['search'], urlencode({
+        _form = urlencode({
             'keyword': name.encode('gbk'),
             's': '3944734779046070832'
-        }))
+        })
+        dat = {
+            'url': M['search'],
+            'data': _form,
+        }
+        raw = self.do_post(dat)
         articles = raw.find_all('article', 'excerpt excerpt-one')
         links = []
         for art in articles:
@@ -220,7 +224,7 @@ class Pjw(Crawl):
                 'page_url': link,
             }
             for link in links
-            ]
+        ]
 
         print(pages)
         pool = Pool(processes=4)

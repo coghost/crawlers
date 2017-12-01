@@ -9,8 +9,6 @@ __description__ = '''
 
 import os
 import sys
-import json
-import requests
 
 app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(app_root)
@@ -18,15 +16,11 @@ if sys.version_info[0] < 3:
     reload(sys)
     sys.setdefaultencoding('utf-8')
 
-import bs4
 from logzero import logger as log
 import click
 
 from base.crawl import Crawl
-from base import abc
-from base.abc import cfg
-
-from sdifen import selen
+from base import abc, selen
 
 My = {
     'search': 'http://www.sdifen.com/?s={}&submit=搜索',
@@ -40,7 +34,7 @@ class Sdifen(Crawl):
         self.baidu_pwd_len = baidu_pwd_len
 
     def get_by_name(self, name=''):
-        raw = self.bs4get(My.get('search').format(name))
+        raw = self.bs4get(My.get('search').format(name), to=10)
         if not raw:
             sys.exit('cannot got {}'.format(name))
 
@@ -94,7 +88,7 @@ class Sdifen(Crawl):
         return '百度网盘' if rs[0] == 3 else '城通网盘'
 
     def get_file_url(self, candi):
-        raw = self.bs4get(candi.get('url', ''))
+        raw = self.bs4get(candi.get('url', ''), to=10)
         if not raw:
             sys.exit('cannot got {}'.format(candi))
 

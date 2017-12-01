@@ -15,6 +15,8 @@ import os
 import sys
 import logging
 import subprocess
+import threading
+from functools import wraps
 
 app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(app_root)
@@ -28,6 +30,9 @@ from clint import textui
 
 import logzero
 from logzero import logger as log
+from base import icons
+
+from bs4 import BeautifulSoup
 
 
 class Conf(object):
@@ -59,6 +64,8 @@ class Conf(object):
 
         _cfg.init('d4.base_dir', '/tmp/d4', str)
         _cfg.init('d4.tag_index', 0, int)
+
+        _cfg.init('movie.base_dir', '/tmp/moview', str)
 
         _cfg.init('mg.host', '127.0.0.1', str)
         _cfg.init('mg.port', 27027, int)
@@ -116,9 +123,132 @@ if cfg.get('log.enabled', False):
 
 # bagua = '☼✔❄✖✄'
 # bagua = '☰☷☳☴☵☲☶☱'  # 乾(天), 坤(地), 震(雷), 巽(xun, 风), 坎(水), 离(火), 艮(山), 兑(泽)
-bagua = '🍺🍻❗😈☠'
+bagua = '🍺🍻♨️️😈☠'
 formatter = LFormatter(bagua)
 logzero.formatter(formatter)
+
+
+def set_clipboard_data(data):
+    p = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
+    p.stdin.write(to_bytes(data))
+    p.stdin.close()
+    p.communicate()
+
+
+def bs4markup(params=None):
+    """
+        **format the markup str to BeautifulSoup doc.**
+
+    .. code:: python
+
+        @bs4markup
+        def fn():
+            pass
+
+    :rtype: BeautifulSoup
+    :param params: ``{'parser': 'html5lib'}``
+    :return:
+    """
+    params = params or {}
+
+    def dec(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            try:
+                rs = fn(*args, **kwargs)
+                markup = BeautifulSoup(
+                    rs,
+                    params.get('parser', 'html5lib'),
+                )
+                if rs == markup.text:
+                    return rs
+                else:
+                    return markup
+            except TypeError as _:
+                pass
+
+        return wrapper
+
+    return dec
+
+
+def threads(bg=False, my_exception=TypeError):
+    def dec(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if bg:
+                try:
+                    t = threading.Thread(target=fn, args=args)
+                    t.daemon = True
+                    t.start()
+                    return t
+                except my_exception as e:
+                    print(e)
+            else:
+                return fn(*args, **kwargs)
+
+        return wrapper
+
+    return dec
+
+
+def catch(do, my_exception=TypeError):
+    """
+    防止程序出现 exception后异常退出,
+    但是这里的异常捕获机制仅仅是为了防止程序退出, 无法做相应处理
+    可以支持有参数或者无参数模式
+
+    -  ``do == True`` , 则启用捕获异常
+    -  无参数也启用 try-catch
+
+    .. code:: python
+
+            @catch
+            def fnc():
+                pass
+
+    -  在有可能出错的函数前添加, 不要在最外层添加,
+    -  这个catch 会捕获从该函数开始的所有异常, 会隐藏下一级函数调用的错误.
+    -  但是如果在内层的函数也有捕获方法, 则都会catch到异常.
+
+    :param my_exception:
+    :type my_exception:
+    :param do:
+    :type do:
+    :return:
+    :rtype:
+    """
+    if not callable(do):
+        def dec(fn):
+            @wraps(fn)
+            def wrapper_(*args, **kwargs):
+                if not do:
+                    return fn(*args, **kwargs)
+
+                try:
+                    return fn(*args, **kwargs)
+                except my_exception as e:
+                    print("file-func({}({}):{}) : has err({})".format(
+                        fn.__code__.co_filename.split('/')[-1],
+                        fn.__code__.co_firstlineno,
+                        fn.__name__, e))
+
+            return wrapper_
+
+        return dec
+
+    @wraps(do)
+    def wrapper(*args, **kwargs):
+        try:
+            return do(*args, **kwargs)
+        except my_exception as e:
+            print("file-func({}({}):{}) : has err({})".format(
+                do.__code__.co_filename.split('/')[-1],
+                do.__code__.co_firstlineno,
+                do.__name__, e
+            ))
+
+    return wrapper
 
 
 def update_cfg(key, val):
@@ -312,9 +442,11 @@ def add_jpg(pathin):
             os.rename(_fpth, '{}.jpg'.format(_fpth))
 
 
-def num_choice(choices):
+def num_choice(choices, depth=1):
     """
-    传入数组, 返回正确的 index
+        传入数组, 返回正确的 index
+
+    :param depth:
     :param choices:
     :type choices:
     :return:
@@ -323,21 +455,20 @@ def num_choice(choices):
     if not choices:
         return None
 
-    with textui.indent(4, quote=' >'):
+    with textui.indent(4, quote=' {}'.format(icons.icons[depth - 1])):
+        # if len(choices) < 20:
         for i, choice in enumerate(choices, start=1):
-            textui.puts(textui.colored.green('{}. [{}]'.format(i, choice)))
-            # print('{}: {}'.format(i, choice))
-
-    if len(choices) == 1:
-        return 0
+            textui.puts(textui.colored.green('{}. {}'.format(i, choice)))
+        # else:
+        #     click.echo_via_pager('\n'.join('{}'.format(x) for x in choices))
 
     _valid = [str(x + 1) for x in range(0, len(choices))]
-    # click.echo('Your Choice(q to quit)? [{}] '.format(','.join(_valid)))
-    c = click.prompt('Your Choice(q to quit)?')
-    # print(c)
+    c = click.prompt(click.style('[Depth: ({})]Your Choice(q-quit/b-back)?', fg='cyan').format(depth))
 
-    if c in 'qQ':
+    if str(c) in 'qQ':
         os._exit(-1)
+    elif str(c) in 'bB':
+        return c
     elif c not in _valid:
         log.error('Invalid input :( [{}]'.format(c))
         return num_choice(choices)

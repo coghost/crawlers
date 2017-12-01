@@ -10,4 +10,5 @@ clint
 jieba
 tqdm
 lxml
+html5lib
 selenium
