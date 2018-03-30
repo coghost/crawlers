@@ -5,6 +5,11 @@
 */*.cnf
 */*.png
 cais/data
+config/icon.txt
+dongao/*.txt
+weibo/*.txt
+kog/*.txt
+weibo/*.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

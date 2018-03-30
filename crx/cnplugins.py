@@ -23,17 +23,10 @@ if sys.version_info[0] < 3:
     reload(sys)
     sys.setdefaultencoding('utf-8')
 
-from logzero import logger as log
-from tqdm import tqdm
 import click
-import json
-from multiprocessing import Pool
-
 from base.crawl import Crawl
-from base import abc
-from base.abc import cfg
-
-import requests
+# from base import abc
+from izen import helper
 
 M = {
     'refer': 'http://www.cnplugins.com',
@@ -83,7 +76,7 @@ class Crx(Crawl):
 def run(name):
     crx = Crx()
     pages = crx.search(name)
-    c = abc.num_choice([x['name'] for x in pages])
+    c = helper.num_choice([x['name'] for x in pages])
     page = pages[c]
     crx_name, url_pth = crx.page_links(page['url'])
     dat = url_pth.split('=')[1].split('&')[0]

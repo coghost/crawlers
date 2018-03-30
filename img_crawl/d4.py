@@ -16,7 +16,7 @@ import sys
 import json
 import time
 from urllib.parse import urljoin
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 
 app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(app_root)
@@ -33,7 +33,6 @@ big: http://44.style/a-9453-b/
 4. 某 page 下的所有图片
 '''
 
-import bs4
 from logzero import logger as log
 from tqdm import tqdm
 import click
@@ -41,6 +40,7 @@ import click
 from base.crawl import Crawl
 from base import abc
 from base.abc import cfg
+from izen import helper
 
 dir_pre = ''
 D = {
@@ -64,12 +64,12 @@ class D4(Crawl):
         self.i2t = {}
 
     def load_cache(self):
-        self.all_tags = json.loads(abc.read_file('d4.tags.json'))
-        self.t2i = json.loads(abc.read_file('d4.t2i.json'))
-        self.i2t = json.loads(abc.read_file('d4.i2t.json'))
+        self.all_tags = json.loads(helper.read_file('d4.tags.json'))
+        self.t2i = json.loads(helper.read_file('d4.t2i.json'))
+        self.i2t = json.loads(helper.read_file('d4.i2t.json'))
 
     def update_reverse_cached(self):
-        # dat = json.loads(abc.read_file('d4.4.t2i.json'))
+        # dat = json.loads(helper.read_file('d4.4.t2i.json'))
         rs_dat = {}
         for k, v in self.t2i.items():
             d = dict(zip(v, [k for _ in v]))
@@ -77,7 +77,7 @@ class D4(Crawl):
 
         if rs_dat:
             self.i2t = rs_dat
-            # abc.write_file(json.dumps(self.i2t).encode(), 'd4.i2t.json')
+            # helper.write_file(json.dumps(self.i2t).encode(), 'd4.i2t.json')
 
     def get_tag_position(self, idx, idx_s=4, is_tag=True):
         all_tags = self.all_tags[idx_s]
@@ -96,7 +96,7 @@ class D4(Crawl):
         :rtype:
         """
         if not self.i2t:
-            self.i2t = json.loads(abc.read_file('d4.i2t.json'))
+            self.i2t = json.loads(helper.read_file('d4.i2t.json'))
 
         return self.i2t.get(page_idx)
 
@@ -126,7 +126,7 @@ class D4(Crawl):
             tags_root.append(tag_in)
 
         if tags_root:
-            abc.write_file(json.dumps(tags_root).encode(), 'd4.tags.json')
+            helper.write_file(json.dumps(tags_root).encode(), 'd4.tags.json')
 
     def gen_tags2index(self, idx=4):
         """
@@ -165,14 +165,14 @@ class D4(Crawl):
         :rtype:
         """
         _k = tag['src']
-        if tag['src'] in json.loads(abc.read_file('d4.t2i.json')):
+        if tag['src'] in json.loads(helper.read_file('d4.t2i.json')):
             log.debug('{} already got'.format(tag['src']))
             return
 
         pages = self.fetch_tags_pages_by_index(tag['src'])
         self.t2i[_k] = pages
 
-        abc.write_file(json.dumps(self.t2i).encode(), 'd4.t2i.json')
+        helper.write_file(json.dumps(self.t2i).encode(), 'd4.t2i.json')
 
     def fetch_tags_pages_by_index(self, tag_index):
         """

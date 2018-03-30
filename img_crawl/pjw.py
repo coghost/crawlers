@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
@@ -16,6 +17,8 @@ import sys
 import time
 from urllib.parse import urljoin, urlencode
 import re
+from multiprocessing import Pool
+import json
 
 app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(app_root)
@@ -26,31 +29,33 @@ if sys.version_info[0] < 3:
 from logzero import logger as log
 from tqdm import tqdm
 import click
-import json
-from multiprocessing import Pool
+
+from izen import helper
 
 from base.crawl import Crawl
 from base import abc
 from base.abc import cfg
 
 M = {
-    'index': 'http://yxpjw.me',
-    'search': 'http://yxpjw.me/plus/search.php',
+    'index': 'http://yxpjwnet1.com',
+    'search': 'http://yxpjwnet1.com/plus/search.php',
 }
+
+enable_filter = False
 
 
 class Pjw(Crawl):
-    def __init__(self, base_dir='/tmp/d4'):
-        Crawl.__init__(self, refer=M['index'])
+    def __init__(self, base_dir='/tmp/pjw'):
+        Crawl.__init__(self, refer=M['index'], parser='html5lib', encoding='gbk')
         self.base_dir = base_dir
         self.store = {}
 
     def load_store(self):
-        self.store = json.loads(abc.read_file('pjw.json'))
+        self.store = json.loads(helper.read_file('pjw.json'))
 
     def update_store(self, key, val):
         self.store[key] = val
-        abc.write_file(json.dumps(self.store).encode(), 'pjw.json')
+        helper.write_file(json.dumps(self.store).encode(), 'pjw.json')
 
     def get_all_imgs(self, page_url, run_alone=False):
         """
@@ -67,6 +72,8 @@ class Pjw(Crawl):
         title, total = self.analy_page_title(content)
         imgs = self.analy_page_image_links(content)
         size = len(imgs)
+        if not size:
+            return '', []
         page_total = total // size
         page_all_sub_urls = [
             '{}_{}.html'.format(page_url.replace('.html', ''), i + 2)
@@ -146,13 +153,18 @@ class Pjw(Crawl):
                 'page_url': page_info
             }
 
-        title, imgs = self.get_all_imgs(urljoin(M['index'], page_info['page_url']))
-        return os.path.join(page_info['name'], title), imgs
+        try:
+            title, imgs = self.get_all_imgs(urljoin(M['index'], page_info['page_url']))
+            return title, imgs
+            # return os.path.join(page_info['name'], title), imgs
+        except TypeError as _:
+            return '', []
 
     def download_by_url(self, page_info):
         fd_abs = os.path.join(self.base_dir, page_info['fd'])
-        if not os.path.exists(fd_abs):
-            os.makedirs(fd_abs)
+        helper.mkdir_p(fd_abs, is_dir=True)
+        # if not os.path.exists(fd_abs):
+        #     os.makedirs(fd_abs)
         os.chdir(fd_abs)
 
         params = [
@@ -164,7 +176,7 @@ class Pjw(Crawl):
         ]
 
         _fail_count = 0
-        for para in tqdm(params, ascii=True, desc='TEST'):
+        for para in tqdm(params, ascii=True):
             rs = self.download_and_save(para)
             if rs == self.save_status['fail']:
                 _fail_count += 1
@@ -183,13 +195,13 @@ class Pjw(Crawl):
                 break
 
     def search_and_download(self, name):
-        params = self.search_local(name)
-        if not params:
-            params = self.search_online(name)
+        # params = self.search_local(name)
+        # if not params:
+        params = self.search_online(name)
         if not params:
             log.error('cannot find [{}]'.format(name.encode()))
 
-        pool = Pool(processes=4)
+        pool = Pool(processes=8)
         pool.map(self.download_by_url, params)
         pool.close()
         pool.join()
@@ -209,7 +221,7 @@ class Pjw(Crawl):
             'url': M['search'],
             'data': _form,
         }
-        raw = self.do_post(dat)
+        raw = self.bs4markup(self.do_post(dat))
         articles = raw.find_all('article', 'excerpt excerpt-one')
         links = []
         for art in articles:
@@ -224,6 +236,7 @@ class Pjw(Crawl):
                 'page_url': link,
             }
             for link in links
+            if not enable_filter or link.find('luyilu') != -1
         ]
 
         print(pages)
@@ -237,12 +250,13 @@ class Pjw(Crawl):
         pool.join()
 
         info = []
-        for rs in results:
+        for rs in tqdm(results, ascii=True):
             _fd, imgs = rs.get()
-            info.append({
-                'fd': _fd,
-                'img_urls': imgs
-            })
+            if _fd:
+                info.append({
+                    'fd': _fd,
+                    'img_urls': imgs
+                })
 
         if info:
             self.update_store(name, info)
@@ -255,11 +269,17 @@ class Pjw(Crawl):
               help='the name of artist\nUSAGE: <cmd> -n <name>')
 @click.option('--base_dir', '-d',
               help='the dir to store images\nUSAGE: <cmd> -d <dir_pth>')
-def run(name, base_dir):
+@click.option('--no_filter', '-nf',
+              is_flag=True,
+              help='filter it')
+def run(name, base_dir, no_filter):
+    global enable_filter
     if base_dir:
         abc.update_cfg('pjw.base_dir', base_dir)
     else:
         base_dir = cfg.get('pjw.base_dir')
+
+    enable_filter = not no_filter
 
     pj = Pjw(base_dir=base_dir)
     pj.search_and_download(name)

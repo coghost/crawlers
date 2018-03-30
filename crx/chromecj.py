@@ -29,8 +29,10 @@ import json
 from multiprocessing import Pool
 
 from base.crawl import Crawl
-from base import abc
+# from base import abc
 from base.abc import cfg
+
+from izen import helper
 
 import requests
 
@@ -54,7 +56,7 @@ class Crx(Crawl):
         r = self.stream_post({
             'url': 'http://chromecj.com/handler/search/{}'.format(name)
         })
-        r = abc.to_str(r)
+        r = helper.to_str(r)
         dat = []
         for cj in r.split('|'):
             info = cj.split('^')
@@ -87,7 +89,7 @@ def run(name):
     ]
     choice_list.append(_)
     while choice_list:
-        c = abc.num_choice(choice_list[-1])
+        c = helper.num_choice(choice_list[-1])
         if str(c) in 'bB' and len(choice_list) == 1:
             continue
 

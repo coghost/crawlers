@@ -28,6 +28,7 @@ from tqdm import tqdm
 import click
 import json
 from multiprocessing import Pool
+from izen import helper
 
 from base.crawl import Crawl
 from base import abc
@@ -54,7 +55,7 @@ class One(Crawl):
         self.sess = requests.session()
 
     def load_cache(self):
-        self.ones = json.loads(abc.read_file('one.1910.all.json'))
+        self.ones = json.loads(helper.read_file('one.1910.all.json'))
 
     def fetch_one(self, depth=1):
         r = self.bs4markup(self.sess.get(M['one']).text)
@@ -85,7 +86,7 @@ class One(Crawl):
             if len(dat['data']) < 10:
                 break
 
-        abc.write_file(json.dumps(all_data), 'one.all.json')
+        helper.write_file(json.dumps(all_data), 'one.all.json')
         return all_data
 
 

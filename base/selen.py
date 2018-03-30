@@ -11,6 +11,7 @@ __description__ = '''
     ☷
 - 参考: http://selenium-python-docs-zh.readthedocs.io/zh_CN/latest/installation.html
 - https://www.cnblogs.com/luxiaojun/p/6144748.html
+- http://cuiqingcai.com/2599.html
 '''
 
 import os

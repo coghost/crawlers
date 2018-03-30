@@ -18,7 +18,7 @@ if sys.version_info[0] < 3:
 
 from logzero import logger as log
 import click
-
+from izen import helper
 from base.crawl import Crawl
 from base import abc, selen
 
@@ -43,7 +43,7 @@ class Sdifen(Crawl):
         if not candidates:
             sys.exit('cannot find {}'.format(name))
 
-        i = abc.num_choice([
+        i = helper.num_choice([
             '{} ({})'.format(c.get('txt'), c.get('netdisk'))
             for c in candidates])
         _soft_info = candidates[i]

@@ -15,8 +15,7 @@ import os
 import sys
 import requests
 import click
-from urllib.parse import urlencode
-import re
+from http import cookiejar
 
 app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(app_root)
@@ -27,8 +26,8 @@ if sys.version_info[0] < 3:
 from bs4 import BeautifulSoup as BS
 from logzero import logger as log
 
-# https://github.com/chenjiandongx/awesome-spider
-from base import abc
+# from base import abc
+from izen import helper
 
 
 class Crawl(object):
@@ -58,9 +57,22 @@ class Crawl(object):
         self.encoding = encoding
 
     def bs4markup(self, markup, parser='', encoding=''):
+        """
+            使用 bs4 来格式化 markup 文本
+
+        :param markup: ``html文本``
+        :type markup: str
+        :param parser: ``解析使用库``
+        :type parser: str
+        :param encoding: ``编码类型``
+        :type encoding: str
+        :return: BeautifulSoup
+        """
         _ec = encoding if encoding else self.encoding
         _ps = parser if parser else self.parser
-        return BS(markup, _ps, from_encoding=encoding)
+        if not encoding:
+            return BS(markup, _ps)
+        return BS(markup, _ps, from_encoding=_ec)
 
     def bs4post(self, req_params, retry=1, use_redirect_location=False):
         while retry > 0:
@@ -71,7 +83,6 @@ class Crawl(object):
                 return BS(res, self.parser, from_encoding=self.encoding)
             retry -= 1
 
-    # @abc.bs4markup()
     def do_post(self, req_params, use_redirect_location=False):
         """
             使用 ``request.post`` 从指定 url 获取数据,
@@ -142,7 +153,17 @@ class Crawl(object):
                 else:
                     log.error('{} cannot reached'.format(url))
 
-    def do_get(self, params):
+    def do_get(self, params, is_json=False, show_log=False):
+        """ 简单封装 requests get
+
+        :param params: requests 支持的参数
+        :type params:
+        :param is_json: 参数是否是 json 格式
+        :type is_json:
+        :param show_log: 是否展示请求的 url
+        :type show_log: bool
+        :return:
+        """
         if isinstance(params, str):
             params = {'url': params}
         if params.get('headers'):
@@ -159,8 +180,13 @@ class Crawl(object):
         content = ''
         try:
             res = requests.get(**para)
+            if show_log:
+                log.debug(res.url)
             if res:
-                content = res.content
+                if is_json:
+                    content = res.json()
+                else:
+                    content = res.content
         except (requests.ReadTimeout, requests.ConnectTimeout, requests.ConnectionError) as _:
             pass
         finally:
@@ -169,7 +195,6 @@ class Crawl(object):
             else:
                 log.error('{} cannot reached'.format(params.get('url')))
 
-    # @abc.bs4markup()
     def stream_post(self, params, use_redirect_location=False, chunk_size=1024, show_bar=False):
         if isinstance(params, str):
             params = {'url': params}
@@ -196,16 +221,15 @@ class Crawl(object):
             content_size = int(res.headers['content-length'])  # 内容体总大小
             if not show_bar:
                 for dat in res.iter_content(chunk_size=chunk_size, decode_unicode=True):
-                    content += abc.to_str(dat)
+                    content += helper.to_str(dat)
                 return content
 
             with click.progressbar(length=content_size, label='fetch') as bar:
                 for dat in res.iter_content(chunk_size=chunk_size, decode_unicode=True):
-                    content += abc.to_str(dat)
+                    content += helper.to_str(dat)
                     bar.update(chunk_size)
             return content
 
-    # @abc.bs4markup()
     def stream_get(self, params, chunk_size=1024, show_bar=True, encoding=''):
         if isinstance(params, str):
             params = {'url': params}
@@ -234,23 +258,42 @@ class Crawl(object):
 
             if not show_bar:
                 for dat in res.iter_content(chunk_size=chunk_size, decode_unicode=True):
-                    content += abc.to_str(dat)
+                    content += helper.to_str(dat)
                 return content
 
             with click.progressbar(length=content_size, label='fetch') as bar:
                 for dat in res.iter_content(chunk_size=chunk_size, decode_unicode=True):
-                    content += abc.to_str(dat)
+                    content += helper.to_str(dat)
                     bar.update(chunk_size)
             return content
 
     @staticmethod
+    def dump_cookies(cookies):
+        _cookie_jar = cookiejar.LWPCookieJar('cookie.txt')
+        requests.utils.cookiejar_from_dict({
+            c.name: c.value
+            for c in cookies
+        }, _cookie_jar)
+        _cookie_jar.save('cookie.txt', ignore_discard=True, ignore_expires=True)
+
+    @staticmethod
+    def load_cookies():
+        if not helper.is_file_ok('cookie.txt'):
+            return
+        _cookie_jar = cookiejar.LWPCookieJar('cookie.txt')
+        _cookie_jar.load('cookie.txt', ignore_expires=True, ignore_discard=True)
+        _cookies = requests.utils.dict_from_cookiejar(_cookie_jar)
+        cookies = requests.utils.cookiejar_from_dict(_cookies)
+        return cookies
+
+    @staticmethod
     def clear_empty_img(dir_pth, do_clear=False):
-        abc.clear_empty_file(dir_pth, ['jpg'], do_clear)
+        helper.clear_empty_file(dir_pth, ['jpg'], do_clear)
 
     def download_and_save(self, params, force_write=False):
         img_url, title = params.get('img_url'), params.get('title')
 
-        if not force_write and abc.is_file_ok(title):
+        if not force_write and helper.is_file_ok(title):
             return self.save_status['skip']
 
         img = self.crawl(img_url)
@@ -260,6 +303,49 @@ class Crawl(object):
             f.write(img)
         return self.save_status['ok']
 
+    def use_proxy(self):
+        proxies = [
+            '117.90.108.101:49651',
+            '113.121.168.35:27287',
+            '113.93.103.89:28221',
+            '49.87.75.51:35257',
+            '121.205.254.227:49435',
+            '115.204.34.176:35862',
+            '60.175.199.109:23760',
+            '171.14.208.81:33804',
+            '222.95.37.81:34422',
+            '49.87.182.181:36147',
+        ]
+        # proxy_ = {
+        #     'https': proxies[0],
+        # 'https': '61.155.164.112:3128',
+        # }
+        # print(proxy_)
+        # uri = 'https://httpbin.org/get'
+        # uri = 'http://2017.ip138.com/ic.asp'
+        # uri = 'https://www.youtube.com'
+        # uri = 'https://twitter.com/'
+        # uri = 'https://www.baidu.com/'
+        uri = 'http://www.xicidaili.com/nn'
+        # uri = 'http://proxydb.net/?country=JP&offset=90'
+        for p in proxies:
+            try:
+                print(p, end=', ')
+                rs = requests.get(
+                    uri,
+                    proxies={
+                        'http': p,
+                    },
+                    timeout=10)
+                # rs = requests.get(uri)
+                print(rs.status_code)
+                # print(rs.text)
+            except Exception as _:
+                print()
+                pass
+
 
 if __name__ == '__main__':
-    log.debug('crawler base.')
+    # log.debug('crawler base.')
+    c = Crawl()
+    c.use_proxy()

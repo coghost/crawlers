@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
@@ -23,6 +24,9 @@ if sys.version_info[0] < 3:
 
 from logzero import logger as log
 import click
+
+from izen import helper
+
 from base.crawl import Crawl
 from base import abc
 
@@ -106,7 +110,7 @@ def run(name):
     choice_list.append(_cis)
 
     while choice_list:
-        c = abc.num_choice(choice_list[-1])
+        c = helper.num_choice(choice_list[-1])
         if str(c) in 'bB' and len(choice_list) == 1:
             continue
 
@@ -117,7 +121,7 @@ def run(name):
             continue
 
         choice_list.append([x['name'] for x in movies])
-        c = abc.num_choice(choice_list[-1], depth=2)
+        c = helper.num_choice(choice_list[-1], depth=2)
         choice_list.pop()
 
         if str(c) in 'bB':
@@ -126,7 +130,7 @@ def run(name):
         link = movies[c].get('url')
 
         log.debug('\n{}\ndownload link url has been copied to [clipboard]!\n'.format(link))
-        abc.set_clipboard_data(link)
+        helper.copy_to_clipboard(link)
         return
 
 

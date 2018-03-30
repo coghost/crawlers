@@ -30,6 +30,8 @@ from logzero import logger as log
 from tqdm import tqdm
 import click
 
+from izen import helper
+
 from base import abc
 from base.abc import cfg
 
@@ -64,10 +66,10 @@ class Mz(Crawl):
         # self.use_cache()
 
     def use_cache_indexes(self):
-        self.all_indexes = json.loads(abc.read_file('mz.idx.json').decode())
+        self.all_indexes = json.loads(helper.read_file('mz.idx.json').decode())
 
     def use_cache(self):
-        self.archives = json.loads(abc.read_file('mz.json').decode())
+        self.archives = json.loads(helper.read_file('mz.json').decode())
 
     def single_page(self):
         self.archive = {
@@ -226,7 +228,7 @@ class Mz(Crawl):
             _path_local = os.path.join(dat['time'], fd_img)
 
             fd = os.path.join(self.base_dir, _path_local)
-            abc.mkdir_p(fd, True)
+            helper.mkdir_p(fd, True)
             os.chdir(fd)
 
             if index in _e_list1:
@@ -245,7 +247,7 @@ class Mz(Crawl):
                     )
                 }
                 for x in range(dat['total'])
-                ]
+            ]
 
             _fail_count = 0
             for para in tqdm(params, ascii=True, desc='%8s ✈ %10s' % (index, _path_local)):
@@ -265,9 +267,9 @@ class Mz(Crawl):
 
             cache_index += 1
             finished.append(index)
-            abc.write_abs_file(json.dumps(finished), '/tmp/mz.done')
+            helper.write_file(json.dumps(finished), '/tmp/mz.done')
             log.warn('Done:({}/{})'.format(cache_index, index))
-        except TypeError as e0:
+        except TypeError as _:
             log.error('fail@type: {}'.format(index))
 
     def download_by_tag(self, tag):

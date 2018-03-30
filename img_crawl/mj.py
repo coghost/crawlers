@@ -28,7 +28,8 @@ from logzero import logger as log
 from tqdm import tqdm
 import click
 
-from base import abc
+from izen import helper
+
 from base.crawl import Crawl
 
 MJ = {
@@ -200,13 +201,13 @@ class Mj(Crawl):
         _rel_pth = '{}/{}.jpg'.format(_img_fd, filename)
         fpth = '{}/{}/{}-{}.jpg'.format(self.base_dir, _img_fd, title, filename)
 
-        if abc.is_file_ok(fpth):
+        if helper.is_file_ok(fpth):
             return
 
         if os.path.exists(fpth):
             log.debug('RETRY: ({})'.format(_rel_pth))
         else:
-            abc.mkdir_p(fpth)
+            helper.mkdir_p(fpth)
 
         img = self.crawl(img_url)
         if not img:
@@ -222,7 +223,7 @@ class Mj(Crawl):
         filename = filename.split('.')[0].zfill(2) + '.jpg'
         filename = '{}-{}'.format(title, filename)
 
-        if not force_write and abc.is_file_ok(filename):
+        if not force_write and helper.is_file_ok(filename):
             return 0
 
         img = self.crawl(img_url)
@@ -269,7 +270,7 @@ class Mj(Crawl):
 
         _img_fd = gen_fd_from_image_url(url_)
         fd = os.path.join(self.base_dir, _img_fd)
-        abc.mkdir_p(fd, True)
+        helper.mkdir_p(fd, True)
         os.chdir(fd)
 
         params = [
