@@ -10,6 +10,8 @@ dongao/*.txt
 weibo/*.txt
 kog/*.txt
 weibo/*.md
+img_crawl/*99.py
+img_crawl/*jw.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
