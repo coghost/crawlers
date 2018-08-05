@@ -1,0 +1,9 @@
+GET /page/login.html?activityId=3421&token=plyhue1441694274&url=https%3A%2F%2Fztcwx.myscrm.cn%2Fpage%2Factivity.html%3Ftoken%3Dplyhue1441694274%26activityId%3D3421 HTTP/1.1
+Host: ztcwx.myscrm.cn
+Connection: keep-alive
+User-Agent: Mozilla/5.0 (Linux; Android 8.0; MIX 2 Build/OPR1.170623.027; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 MQQBrowser/6.2 TBS/044109 Mobile Safari/537.36 MicroMessenger/6.6.7.1320(0x26060734) NetType/WIFI Language/en
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,image/wxpic,image/sharpp,image/apng,*/*;q=0.8
+Referer: https://ztcwx.myscrm.cn/page/activity.html?token=plyhue1441694274&activityId=3421
+Accept-Encoding: gzip, deflate
+Accept-Language: en,en-US;q=0.8
+Cookie: aliyungf_tc=AQAAAF2ZBE1s2wIAorjHbzlAxKRMhrcq; PHPSESSID=htdfv055dofa53rdd05ims7m61; env_orgcode=whliantouadmin; public_no_token=b34a92b75b317900dc33e7c55a2de5f0d1b06d0816ba98cf99f5b71a838cae5fa%3A2%3A%7Bi%3A0%3Bs%3A15%3A%22public_no_token%22%3Bi%3A1%3Bs%3A16%3A%22plyhue1441694274%22%3B%7D; yunke_org_id=5cc38f72f1b85e2a4084ffe066d4532c6cc6e57d3002bca5e3cfc441c9c9cf5ca%3A2%3A%7Bi%3A0%3Bs%3A12%3A%22yunke_org_id%22%3Bi%3A1%3Bs%3A36%3A%2239cf241c-61ac-cc02-5e23-d505e56ff0a9%22%3B%7D; ztc_org_id=4c11ba4605fd398bc42fef1c55d5679692affafa1eba185cd24cdc46ca15d5cfa%3A2%3A%7Bi%3A0%3Bs%3A10%3A%22ztc_org_id%22%3Bi%3A1%3Bi%3A594%3B%7D; last_env=g2
