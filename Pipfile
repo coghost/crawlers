@@ -1,0 +1,26 @@
+[[source]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+izen = "*"
+mongoengine = "*"
+cfscrape = "*"
+profig = "*"
+"bs4" = "*"
+requests = "*"
+logzero = "*"
+colorama = "*"
+click = "*"
+clint = "*"
+jieba = "*"
+tqdm = "*"
+lxml = "*"
+"html5lib" = "*"
+selenium = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.7"
