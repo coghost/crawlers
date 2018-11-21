@@ -34,6 +34,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from logzero import logger as log
 
+chrome_mac = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'
+
 
 def init_chrome():
     options = webdriver.ChromeOptions()
@@ -48,9 +50,12 @@ def init_chrome():
         # 'profile.default_content_settings.popups': 0,
         # 'download.default_directory': '/tmp/'
     }
-    options.add_argument(
-        'user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) '
-        'AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"')
+    if 1:
+        options.add_argument(
+            'user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) '
+            'AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"')
+    else:
+        options.add_argument('user-agent="{}"'.format(chrome_mac))
 
     # options.add_experimental_option('prefs', prefs)
     return webdriver.Chrome(chrome_options=options)
@@ -75,16 +80,22 @@ def ctfile_by_chrome(url):
         # 'profile.default_content_settings.popups': 0,
         'download.default_directory': '/tmp/'
     }
-    options.add_argument(
-        'user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) '
-        'AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"')
+    # options.add_argument(
+    #     'user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) '
+    #     'AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"')
+
+    options.add_argument('user-agent="{}"'.format(chrome_mac))
 
     options.add_experimental_option('prefs', prefs)
     driver = webdriver.Chrome(chrome_options=options)
     driver.get(url)
+    driver.find_element_by_id('free_down_link').send_keys(Keys.PAGE_DOWN)
+    time.sleep(0.1)
     driver.find_element_by_id('free_down_link').click()
+    driver.find_element_by_id('free_down_link').send_keys(Keys.PAGE_DOWN)
+    time.sleep(0.1)
     driver.find_element_by_id('free_down_link').click()
-    input('press anything to cancel download... ')
+    input('press any key to cancel download... ')
     driver.quit()
 
 
@@ -120,14 +131,20 @@ def baidu_pan_by_chrome(url='', pwd=''):
 
     ab.get(url)
     # 检查文件是否存在
-    err_msg = ab.find_element_by_id('share_nofound_des').text
-    if err_msg:
-        log.error(err_msg)
-        ab.quit()
-        return
+    try:
+        err_msg = ab.find_element_by_id('share_nofound_des')
+        if err_msg:
+            log.error(err_msg.text)
+            ab.quit()
+            return
+    except NoSuchElementException as _:
+        pass
 
     ab.find_element_by_tag_name('input').send_keys(pwd)
+    time.sleep(0.1)
     ab.find_element_by_tag_name('input').send_keys(Keys.ENTER)
+    time.sleep(0.1)
+    ab.find_element_by_id('getfileBtn').click()
     wait = WebDriverWait(ab, 5)
     ele = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'slide-show-right')))
 
@@ -136,7 +153,7 @@ def baidu_pan_by_chrome(url='', pwd=''):
         if btn.text.find('下载') != -1:
             btn.send_keys(Keys.ENTER)
             break
-    input('press anything to exit... ')
+    input('press any key to cancel download and exit... ')
     ab.quit()
 
 

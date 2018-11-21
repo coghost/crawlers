@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
@@ -9,46 +10,87 @@ __description__ = '''
 
 import os
 import sys
+import time
+from dataclasses import dataclass
 
 app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(app_root)
-if sys.version_info[0] < 3:
-    reload(sys)
-    sys.setdefaultencoding('utf-8')
 
 from logzero import logger as log
 import click
-from izen import helper
-from base.crawl import Crawl
+from izen import helper, crawler
 from base import abc, selen
 
-My = {
-    'search': 'http://www.sdifen.com/?s={}&submit=搜索',
-    'refer': 'https://sdifen.ctfile.com',
-}
+
+@dataclass
+class M:
+    index: str = 'https://sdifen.ctfile.com'
+    search: str = 'http://www.sdifen.com/page/{}/?s={}&submit=搜索'
+    refer: str = 'https://sdifen.ctfile.com'
 
 
-class Sdifen(Crawl):
-    def __init__(self, refer=My.get('refer', ''), baidu_pwd_len=4, encoding='utf-8'):
-        Crawl.__init__(self, refer, encoding=encoding)
+class Sdifen(crawler.CommonCrawler):
+    def __init__(self, baidu_pwd_len=4, parser='lxml', encoding='utf-8', **kwargs):
+        self.bs = {
+            'parser': parser,
+            'encoding': encoding,
+        }
+        super().__init__(**kwargs)
         self.baidu_pwd_len = baidu_pwd_len
+        self.netdisk = kwargs.get('netdisk', False)
 
-    def get_by_name(self, name=''):
-        raw = self.bs4get(My.get('search').format(name), to=10)
+    def get_by_name(self, name='', page_num=1):
+        log.debug('get {} with page {}'.format(name, page_num))
+        _ts = time.time()
+        raw = self.bs4get(M.search.format(page_num, name))
+        _te = time.time()
+        if _te - _ts > 5:
+            log.warning('Take {}s to fetch!'.format(_te - _ts))
+
         if not raw:
             sys.exit('cannot got {}'.format(name))
 
         art_docs = raw.find('div', id='content')
-        candidates = self.get_articles(art_docs)
+        has_next_page = raw.find_all('a', class_='nextpostslink')
+        candidates, total = self.get_articles(art_docs)
         if not candidates:
-            sys.exit('cannot find {}'.format(name))
+            log.warning('valid/total {}/{}, try without `-d`'.format(name, total))
+            return
 
-        i = helper.num_choice([
-            '{} ({})'.format(c.get('txt'), c.get('netdisk'))
-            for c in candidates])
-        _soft_info = candidates[i]
-        log.debug('Your Choice is: [{}]'.format(_soft_info['txt']))
+        softs = ['{} ({})'.format(c.get('txt'), c.get('netdisk'))
+                 for c in candidates]
 
+        while True:
+            c = helper.num_choice(
+                softs,
+                default=1,
+                valid_keys='n,N,p,P'
+            )
+            if not c:
+                return c
+
+            if str(c) in 'bB':
+                return
+
+            if str(c) in 'nN':
+                if has_next_page:
+                    page_num += 1
+                    return self.get_by_name(name, page_num)
+                else:
+                    log.warning('page {} is last page, check previous page with <pP> instead'.format(page_num))
+                    continue
+
+            if str(c) in 'pP':
+                page_num -= 1
+                return self.get_by_name(name, page_num)
+
+            if c:
+                c = int(c) - 1
+                _soft_info = candidates[c]
+                log.debug('Your Choice is: [{}]'.format(_soft_info['txt']))
+                self.do_download(_soft_info)
+
+    def do_download(self, _soft_info):
         soft = self.get_file_url(_soft_info)
         if not soft:
             log.error('cannot get file: ({})'.format(_soft_info['txt']))
@@ -74,21 +116,29 @@ class Sdifen(Crawl):
             txt = art.header.h1.a.text
             url = art.header.h1.a.get('href')
             _pan = self.get_soft_pan(url)
-            arts.append({
-                'txt': txt,
-                'url': url,
-                'netdisk': _pan,
-            })
-        return arts
+            if self.netdisk:
+                if _pan:
+                    arts.append({
+                        'txt': txt,
+                        'url': url,
+                        'netdisk': _pan,
+                    })
+            else:
+                arts.append({
+                    'txt': txt,
+                    'url': url,
+                    'netdisk': _pan or 'x' * 3,
+                })
+        return arts, len(arts_raw)
 
     def get_soft_pan(self, _url):
         rs = self.get_file_url({'url': _url})
         if not rs:
-            return '官方下载'
+            return ''
         return '百度网盘' if rs[0] == 3 else '城通网盘'
 
     def get_file_url(self, candi):
-        raw = self.bs4get(candi.get('url', ''), to=10)
+        raw = self.bs4get(candi.get('url', ''))
         if not raw:
             sys.exit('cannot got {}'.format(candi))
 
@@ -115,8 +165,12 @@ class Sdifen(Crawl):
 @click.command()
 @click.option('--name', '-n',
               help='the name of software\nUSAGE: <cmd> -n <name>')
-def run(name):
-    s = Sdifen()
+@click.option('--netdisk', '-d',
+              is_flag=True,
+              help='the name should has a valid net disk link\nUSAGE: <cmd> -d')
+def run(name, netdisk):
+    log.debug('{} => {}'.format(name, netdisk))
+    s = Sdifen(site_init_url=M.index, netdisk=netdisk, log_level=20)
     s.get_by_name(name)
 
 

@@ -11,6 +11,7 @@ config/icon.txt
 dongao/*.txt
 weibo/*.txt
 kog/*.txt
+music/*.txt
 weibo/*.md
 img_crawl/*99.py
 img_crawl/*jw.py

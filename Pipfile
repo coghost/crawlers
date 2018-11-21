@@ -4,7 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-izen = "*"
 mongoengine = "*"
 cfscrape = "*"
 profig = "*"
@@ -19,6 +18,9 @@ tqdm = "*"
 lxml = "*"
 "html5lib" = "*"
 selenium = "*"
+izen = {editable = true, path = "/Users/lihe/00Li/github/izen"}
+wget = "*"
+mutagen = "*"
 
 [dev-packages]
 
