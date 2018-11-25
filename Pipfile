@@ -18,6 +18,7 @@ tqdm = "*"
 lxml = "*"
 "html5lib" = "*"
 selenium = "*"
+# izen = "*"
 izen = {editable = true, path = "/Users/lihe/00Li/github/izen"}
 wget = "*"
 mutagen = "*"
