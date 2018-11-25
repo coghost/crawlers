@@ -20,14 +20,14 @@ from izen import helper
 
 
 class MkHeader(object):
-    def __init__(self, fpth='headers.txt'):
+    def __init__(self, fpth='headers.txt', use_cookies=True):
         self.fpth = fpth
         self.url = ''
         self.cookies = {}
         self.headers = {}
-        self.parse_charles()
+        self.parse_charles(use_cookies)
 
-    def parse_charles(self):
+    def parse_charles(self, use_cookies):
         """
         analy plain info from charles packet
 
@@ -48,7 +48,8 @@ class MkHeader(object):
             _k, v = arr[0], ':'.join(arr[1:])
             dat[_k] = v
 
-        self.fmt_cookies(dat.pop('Cookie'))
+        if use_cookies:
+            self.fmt_cookies(dat.pop('Cookie'))
         self.headers = dat
         self.url = 'https://{}{}'.format(self.headers.get('Host'), url)
         # return url, dat
