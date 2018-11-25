@@ -28,7 +28,7 @@ from izen.helper import R, G, B, Y, C, F
 from bs4 import BeautifulSoup as BS
 from house import myyk
 from logzero import logger as log
-from music import yiting
+from music import sonimei
 import wget
 from music import encrypt
 from http.cookiejar import LWPCookieJar
@@ -192,7 +192,7 @@ def parse_song_name(raw):
         title = s.find(class_='txt').b.get('title')
         author = s.find(class_='text').get('title')
         print(i, title, author)
-        yiting.search_it(title, author)
+        sonimei.search_it(title, author)
         TR.log_random_sleep(1, .1)
 
 
@@ -375,7 +375,7 @@ def top_listen():
         title = s.find(class_='txt').b.get('title')
         author = s.find(class_='txt').span.span.a.text
         # print(i, title, author)
-        _info = yiting.search_it(title, author)
+        _info = sonimei.search_it(title, author)
         print(i, _info)
         TR.log_random_sleep(1, .1)
 
