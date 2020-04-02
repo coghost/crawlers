@@ -1,0 +1,10 @@
+__EN_DOT_K_INT: &DOT_K_INT
+  _attr_refine: enrich_dot_k_int
+
+__raw:
+  site_url: https://www.nvshens.net/
+
+count:
+  _locator: div#dinfo>span
+  <<: *DOT_K_INT
+

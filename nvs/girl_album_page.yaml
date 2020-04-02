@@ -1,0 +1,10 @@
+__raw:
+  site_url: https://www.nvshens.net/
+
+title:
+  _locator: head>title
+
+albums:
+  _locator: a.igalleryli_link
+  _index: ~
+  _attr: href

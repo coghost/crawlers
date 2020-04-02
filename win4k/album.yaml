@@ -1,0 +1,28 @@
+__EN_DOT_K_INT: &DOT_K_INT
+  _attr_refine: enrich_dot_k_int
+
+__STRIP_COLON: &STRIP_LINE
+  _striped: '\n'
+
+__raw:
+  site_url: https://www.win4k.com/
+
+images:
+  size: div.Bigimg_style>span>em
+  url:
+    _index: ~
+    _locator: ul#scroll>li>a>img
+    _attr: data-original
+  count:
+    _locator: div.ptitle>em
+    <<: *DOT_K_INT
+
+albums:
+  album_name: div.Left_bar>div>div.tit>h2
+  albums:
+    _index: ~
+    _locator: li>a[href^="http://www.win4000.com/meinv"]
+    url:
+      _attr: href
+    name:
+      _locator: p
